@@ -1,0 +1,39 @@
+airflow:
+  dag_id: bronze_cintellate
+  owner: airflow
+  start_date: 2024-01-01
+  schedule_interval: '@weekly'
+  tags:
+    - bronze
+    - cintellate
+
+tasks:
+  - task_id: build_b1
+    operator: airflow.providers.databricks.operators.databricks.DatabricksRunNowOperator
+    params:
+      databricks_conn_id: databricks_jhg
+      job_name: bronze_cintellate_ingestion
+      polling_period_seconds: 30
+      databricks_retry_limit: 1
+      databricks_retry_delay: 5
+      notebook_params:
+        schema_evolution_mode: failOnNewColumns
+        rebuild: False
+
+  - task_id: collect_dbt_job_id
+    operator: airflow.operators.python.PythonOperator
+    params:
+      python_callable: dbt.get_dbt_job_id
+      op_kwargs:
+        dbt_cloud_conn_id: dbt_jhg
+        job_name: 'Build Bronze Cintellate'
+    upstream:
+      - build_b1
+
+  - task_id: build_b2_b3
+    operator: airflow.providers.dbt.cloud.operators.dbt.DbtCloudRunJobOperator
+    params:
+      dbt_cloud_conn_id: dbt_jhg
+      job_id: '{{ ti.xcom_pull(task_ids="collect_dbt_job_id") }}'
+    upstream:
+      - collect_dbt_job_id
