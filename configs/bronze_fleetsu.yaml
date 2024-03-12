@@ -1,18 +1,18 @@
 airflow:
-  dag_id: bronze_cintellate
+  dag_id: bronze_fleetsu
   owner: airflow
   start_date: 2024-01-01
   schedule_interval: '@weekly'
   tags:
     - bronze
-    - cintellate
+    - fleetsu
 
 tasks:
   - task_id: build_b1
     operator: airflow.providers.databricks.operators.databricks.DatabricksRunNowOperator
     params:
       databricks_conn_id: databricks_jhg
-      job_name: bronze_cintellate_ingestion
+      job_name: bronze_fleetsu_ingestion
       polling_period_seconds: 30
       databricks_retry_limit: 1
       databricks_retry_delay: 5
@@ -26,7 +26,7 @@ tasks:
       python_callable: hooks.dbt.get_dbt_job_id
       op_kwargs:
         dbt_cloud_conn_id: dbt_jhg
-        job_name: 'Build Bronze Cintellate'
+        job_name: 'Build Bronze Fleetsu'
     upstream:
       - build_b1
 

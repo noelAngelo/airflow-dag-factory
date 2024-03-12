@@ -1,5 +1,5 @@
 airflow:
-  dag_id: bronze_eds
+  dag_id: bronze_pp
   owner: airflow
   start_date: 2024-01-01
   schedule_interval: '@weekly'
@@ -8,11 +8,35 @@ airflow:
     - eds
 
 tasks:
-  - task_id: build_b1
+  - task_id: build_b1_pp1
     operator: airflow.providers.databricks.operators.databricks.DatabricksRunNowOperator
     params:
       databricks_conn_id: databricks_jhg
-      job_name: bronze_eds_ingestion
+      job_name: bronze_pp1_ingestion
+      polling_period_seconds: 30
+      databricks_retry_limit: 1
+      databricks_retry_delay: 5
+      notebook_params:
+        schema_evolution_mode: failOnNewColumns
+        rebuild: False
+
+  - task_id: build_b1_pp2
+    operator: airflow.providers.databricks.operators.databricks.DatabricksRunNowOperator
+    params:
+      databricks_conn_id: databricks_jhg
+      job_name: bronze_pp2_ingestion
+      polling_period_seconds: 30
+      databricks_retry_limit: 1
+      databricks_retry_delay: 5
+      notebook_params:
+        schema_evolution_mode: failOnNewColumns
+        rebuild: False
+
+  - task_id: build_b1_pp3
+    operator: airflow.providers.databricks.operators.databricks.DatabricksRunNowOperator
+    params:
+      databricks_conn_id: databricks_jhg
+      job_name: bronze_pp3_ingestion
       polling_period_seconds: 30
       databricks_retry_limit: 1
       databricks_retry_delay: 5
@@ -28,7 +52,9 @@ tasks:
         dbt_cloud_conn_id: dbt_jhg
         job_name: 'Build Bronze ProjectsApp'
     upstream:
-      - build_b1
+      - build_b1_pp1
+      - build_b1_pp2
+      - build_b1_pp3
 
   - task_id: build_b2_b3
     operator: airflow.providers.dbt.cloud.operators.dbt.DbtCloudRunJobOperator
